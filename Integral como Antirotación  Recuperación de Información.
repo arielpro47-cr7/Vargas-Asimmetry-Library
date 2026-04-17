@@ -1,0 +1,9 @@
+def recover_scale_info(self, f_integral, var):
+        """
+        Propiedad de Antirrotación (Base Paper 7).
+        Demuestra que la constante C contiene la información de la escala 'b'.
+        """
+        # Aplicamos el operador a la función ya integrada
+        # para extraer la 'asimetría de la integral'
+        recovered_asymmetry, _ = self.apply(f_integral, var)
+        return recovered_asymmetry
