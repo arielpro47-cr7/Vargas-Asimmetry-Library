@@ -1,0 +1,45 @@
+"""
+VARGAS ASYMMETRY LIBRARY (VAL)
+Implementation of the Asymmetry Operator by Vargas Carlos Ariel.
+Based on the 3-Step Methodology: 
+1. Scale Preservation, 2. Complex Extension, 3. Parity Separation.
+"""
+
+import sympy as sp
+
+class AsymmetryOperator:
+    def __init__(self, precision=6):
+        self.b = sp.Symbol('b', real=True) # Memoria de Escala de Vargas
+        self.precision = precision
+
+    def apply(self, f, var):
+        """
+        Aplica el Operador de Asimetría de Vargas a una función f respecto a var.
+        Retorna: (Asimetría Estructural, Tendencia Clásica)
+        """
+        # Paso 1 y 2: Extensión al plano de Vargas (ib)
+        f_ext = f.subs(var, var + sp.I * self.b).series(self.b, 0, self.precision).removeO()
+        
+        # El Operador de Vargas: [f(x+ib) - f(x)] / ib
+        op_res = sp.simplify((f_ext - f) / (sp.I * self.b))
+        
+        # Paso 3: Extracción de información de vecindad (Parte Real)
+        # y Convergencia Clásica (Parte Imaginaria)
+        val_asymmetry = sp.re(op_res)
+        val_classical = sp.im(op_res)
+        
+        return val_asymmetry, val_classical
+
+# --- Ejemplo de uso científico ---
+if __name__ == "__main__":
+    v = AsymmetryOperator()
+    x = sp.Symbol('x')
+    
+    # Prueba con la función de singularidad (Navier-Stokes/Paper 12)
+    f_sing = 1/x
+    asimetria, clasica = v.apply(f_sing, x)
+    
+    print("VARGAS ASYMMETRY OPERATOR - RESULTADOS")
+    print(f"Función: {f_sing}")
+    print(f"Asimetría (Regularizador de Vargas): {asimetria}")
+    print(f"Clásica (Fuerza de Cauchy): {clasica}")
