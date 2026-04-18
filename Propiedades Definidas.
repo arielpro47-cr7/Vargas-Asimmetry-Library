@@ -1,0 +1,46 @@
+"""
+VARGAS ASYMMETRY LIBRARY (VAL) - CORE ENGINE
+Repository: Properties and Mathematical Foundations
+DOI-Core: [Tu DOI de Propiedades]
+"""
+
+import sympy as sp
+
+class AsymmetryOperator:
+    def __init__(self, precision=6):
+        self.b = sp.Symbol('b', real=True) # Memoria de Escala de Vargas
+        self.precision = precision
+
+    def apply(self, f, var):
+        """Aplica la Metodología de 3 Pasos de Vargas."""
+        f_ext = f.subs(var, var + sp.I * self.b).series(self.b, 0, self.precision).removeO()
+        op_res = sp.simplify((f_ext - f) / (sp.I * self.b))
+        return sp.re(op_res), sp.im(op_res)
+
+    def property_linearity(self, f1, f2, var):
+        """Demuestra la consistencia lineal del operador."""
+        res_f1_real, _ = self.apply(f1, var)
+        res_f2_real, _ = self.apply(f2, var)
+        res_sum_real, _ = self.apply(f1 + f2, var)
+        return sp.simplify(res_sum_real - (res_f1_real + res_f2_real)) == 0
+
+    def property_regularization(self, f_singular, var):
+        """Extrae la forma regularizada de una singularidad (Base Paper 12)."""
+        asimetria, _ = self.apply(f_singular, var)
+        return asimetria
+
+    def property_anti_rotation(self, f_clásica, var):
+        """Recupera información de vecindad de una integral (Base Paper 7)."""
+        # La integral de Vargas 've' la asimetría que Cauchy ignora
+        recuperada, _ = self.apply(f_clásica, var)
+        return recuperada
+
+# --- REGISTRO DE PROPIEDADES (Para el que quiera desarrollar) ---
+if __name__ == "__main__":
+    v = AsymmetryOperator()
+    x = sp.Symbol('x')
+    
+    print("ESTADO DE PROPIEDADES DEL OPERADOR ARIEL (VARGAS)")
+    print(f"1. Linealidad (f=x^2, g=x^3): {v.property_linearity(x**2, x**3, x)}")
+    print(f"2. Regularización Natural (f=1/x): {v.property_regularization(1/x, x)}")
+    print(f"3. Recuperación de Escala (f=x^2): {v.property_anti_rotation(x**2, x)}")
