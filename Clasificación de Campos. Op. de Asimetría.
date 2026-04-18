@@ -1,0 +1,23 @@
+def classify_field(self, f, var):
+        """
+        Clasificación Estructural de Campos (Base Paper 4).
+        Identifica: Orden Dominante y Paridad Estructural.
+        """
+        # Obtenemos la expansión de Taylor (pre-límite)
+        expansion = f.subs(var, var + self.b).series(self.b, 0, self.precision).removeO()
+        coeffs = sp.Poly(expansion, self.b).all_coeffs()[::-1] # Coeficientes de b^0, b^1...
+        
+        # 1. Encontrar orden dominante (nd)
+        nd = next((i for i, c in enumerate(coeffs) if c != 0), None)
+        
+        # 2. Determinar Paridad
+        parity = "Even" if nd % 2 == 0 else "Odd"
+        
+        # 3. Determinar Régimen (basado en tus definiciones del Paper 4)
+        regime = "Symmetric" if nd == 1 else "Asymmetric (Latent)"
+        
+        return {
+            "Dominant Order": nd,
+            "Structural Parity": parity,
+            "Regime": regime
+        }
