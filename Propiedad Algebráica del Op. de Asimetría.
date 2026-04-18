@@ -1,0 +1,6 @@
+def apply_3d(self, f_list, vars_list):
+        """Aplica el operador a un campo vectorial (Paper 3)."""
+        results = []
+        for i in range(len(f_list)):
+            results.append(self.apply(f_list[i], vars_list[i]))
+        return results
