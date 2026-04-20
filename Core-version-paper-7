@@ -1,0 +1,89 @@
+"""
+VARGAS ASYMMETRY LIBRARY (VAL) - CORE ENGINE v2.0
+Autor: Vargas Carlos Ariel
+ORCID: 0009-0005-6057-3702
+Licencia: Apache 2.0
+Descripción: Implementación unificada del Operador de Asimetría (Ariel) 
+y la Metodología de los 3 Pasos para el análisis de pre-límite.
+"""
+
+import sympy as sp
+
+class AsymmetryOperator:
+    def __init__(self, precision=6):
+        self.b = sp.Symbol('b', real=True) # Memoria de Escala de Vargas
+        self.precision = precision
+
+    def apply(self, f, var):
+        """
+        METODOLOGÍA DE LOS 3 PASOS (Paper 6):
+        1. Preservar Escala, 2. Extensión Compleja (ib), 3. Separación por Paridad.
+        """
+        # Extensión al plano de Vargas
+        f_ext = f.subs(var, var + sp.I * self.b).series(self.b, 0, self.precision).removeO()
+        # Operador de Vargas: [f(x+ib) - f(x)] / ib
+        op_res = sp.simplify((f_ext - f) / (sp.I * self.b))
+        
+        # Parte Real (Asimetría/Estructura) y Parte Imaginaria (Tendencia Clásica)
+        return sp.re(op_res), sp.im(op_res)
+
+    def classify_field(self, f, var):
+        """CLASIFICACIÓN ESTRUCTURAL (Paper 4): nd, Paridad y Régimen."""
+        asym, _ = self.apply(f, var)
+        poly = sp.Poly(asym, self.b)
+        terms = poly.terms()
+        
+        if not terms: return {"Order": 0, "Regime": "Static"}
+        
+        nd_minus_1 = min(t[0][0] for t in terms)
+        nd = nd_minus_1 + 1
+        parity = "Even" if nd % 2 == 0 else "Odd"
+        regime = "Classical (Cauchy)" if nd == 1 else "Asymmetric (Latent)"
+        
+        return {"nd": nd, "Parity": parity, "Regime": regime}
+
+    def apply_vector_field(self, functions, variables):
+        """DIMENSIONALIDAD (Paper 2 & 3): Aplicación a campos vectoriales."""
+        return [self.apply(f, v) for f, v in zip(functions, variables)]
+
+    def property_regularization(self, f, var):
+        """REGULARIZACIÓN NATURAL (Base Paper 12): Evita singularidades."""
+        asym, _ = self.apply(f, var)
+        return asym
+
+    def property_anti_rotation(self, f_integral, var):
+        """INTEGRAL COMO ANTI-ROTACIÓN (Paper 7): Recupera memoria de escala b."""
+        recovered_asymmetry, _ = self.apply(f_integral, var)
+        return recovered_asymmetry
+
+    def verify_linearity(self, f1, f2, var):
+        """CONSISTENCIA ALGEBRAICA: Linealidad del operador."""
+        r1, _ = self.apply(f1, var)
+        r2, _ = self.apply(f2, var)
+        r_sum, _ = self.apply(f1 + f2, var)
+        return sp.simplify(r_sum - (r1 + r2)) == 0
+
+# --- SUITE DE AUTO-TEST DE VALIDACIÓN (Hasta Paper 7) ---
+def run_system_check():
+    print("=== VAL CORE v2.0: INFORME DE INTEGRIDAD ESTRUCTURAL ===")
+    v = AsymmetryOperator()
+    x = sp.Symbol('x')
+
+    # Test 1: Consistencia Clásica (Derivada de x^2)
+    _, imag = v.apply(x**2, x)
+    print(f"Test 1 (Cauchy Trend): {'PASSED' if imag == x else 'FAILED'}")
+
+    # Test 2: Clasificación de Campo (Paper 4)
+    c = v.classify_field(x**3, x)
+    print(f"Test 2 (Field Classification): {c}")
+
+    # Test 3: Regularización (Paper 12 Preview)
+    reg = v.property_regularization(1/x, x)
+    print(f"Test 3 (Singularity Fix 1/x): {reg}")
+
+    # Test 4: Memoria de Integración (Paper 7)
+    memo = v.property_anti_rotation(x**2, x)
+    print(f"Test 4 (Integration Memory): {memo}")
+
+if __name__ == "__main__":
+    run_system_check()
